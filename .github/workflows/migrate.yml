@@ -1,0 +1,26 @@
+name: Flyway Migrate
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "flyway/sql/**" ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [ "stg", "prod" ]
+        default: "prod"
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      FLYWAY_URL: ${{ secrets.FLYWAY_URL }}
+      FLYWAY_USER: ${{ secrets.FLYWAY_USER }}
+      FLYWAY_PASSWORD: ${{ secrets.FLYWAY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrate
+        uses: docker://flyway/flyway:latest
+        with:
+          args: -configFiles=flyway/flyway.conf migrate
