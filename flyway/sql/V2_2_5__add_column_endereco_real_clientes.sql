@@ -1,0 +1,1 @@
+ALTER TABLE clientes ADD endereco_real VARCHAR(255) DEFAULT NULL;
