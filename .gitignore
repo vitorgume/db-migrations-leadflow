@@ -2,3 +2,5 @@ flyway/env/.env.*
 !.example
 **/.DS_Store
 *.log
+
+.env
