@@ -3,7 +3,9 @@ name: Flyway Migrate
 on:
   push:
     branches: [ "main" ]
-    paths: [ "flyway/sql/**" ]
+    paths:
+      - "flyway/sql/**"
+      - "flyway/*.conf"      
   workflow_dispatch:
     inputs:
       environment:
@@ -14,13 +16,39 @@ on:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+
+    environment: ${{ github.event.inputs.environment || 'prod' }}
+
     env:
       FLYWAY_URL: ${{ secrets.FLYWAY_URL }}
       FLYWAY_USER: ${{ secrets.FLYWAY_USER }}
       FLYWAY_PASSWORD: ${{ secrets.FLYWAY_PASSWORD }}
+
     steps:
       - uses: actions/checkout@v4
-      - name: Migrate
-        uses: docker://flyway/flyway:latest
-        with:
-          args: -configFiles=flyway/flyway.conf migrate
+
+      # Define o alvo (stg/prod). No push, assume prod; no dispatch, usa o input.
+      - name: Resolve target environment
+        run: |
+          if [ -z "${{ github.event.inputs.environment }}" ]; then
+            echo "TARGET_ENV=prod" >> $GITHUB_ENV
+          else
+            echo "TARGET_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          fi
+          echo "Using environment: $TARGET_ENV"
+
+      - name: Flyway info
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/work" -w /work \
+            -e FLYWAY_URL -e FLYWAY_USER -e FLYWAY_PASSWORD \
+            -e FLYWAY_CONFIG_FILES="/work/flyway/${TARGET_ENV}.conf" \
+            flyway/flyway:latest info
+
+      - name: Flyway migrate
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/work" -w /work \
+            -e FLYWAY_URL -e FLYWAY_USER -e FLYWAY_PASSWORD \
+            -e FLYWAY_CONFIG_FILES="/work/flyway/${TARGET_ENV}.conf" \
+            flyway/flyway:latest migrate
