@@ -1,0 +1,1 @@
+ALTER TABLE conversas_agente ADD COLUMN inativo tinyint DEFAULT NULL;
