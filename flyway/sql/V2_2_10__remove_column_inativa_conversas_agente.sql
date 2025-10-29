@@ -1,0 +1,1 @@
+ALTER TABLE conversas_agente DROP COLUMN inativa;
